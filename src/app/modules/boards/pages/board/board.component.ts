@@ -11,7 +11,7 @@ import { TodoDialogComponent } from '@boards/components/todo-dialog/todo-dialog.
 import { BoardsService } from '@services/boards.service';
 import { ActivatedRoute } from '@angular/router';
 import { Board } from '@models/board.models';
-import { Card } from '@models/list.model';
+import { Card, List } from '@models/list.model';
 import { CardsService } from '@services/cards.service';
 
 @Component({
@@ -104,6 +104,24 @@ export class BoardComponent implements OnInit {
         console.log(update);
       }
     })
+  }
+
+  openFormCard(list: List){
+    // list.showCardForm = !list.showCardForm;
+    if (this.board?.lists) {
+      this.board.lists = this.board.lists.map( iteratorList => {
+        if (iteratorList.id === list.id) {
+          return {
+            ...iteratorList,
+            showCardForm: true
+          }
+        }
+        return {
+          ...iteratorList,
+          showCardForm: false
+        }
+      })
+    }
   }
 }
 

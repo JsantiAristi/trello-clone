@@ -3,6 +3,7 @@ export interface List {
   title: string;
   position: number;
   cards: Card[];
+  showCardForm?: boolean;
 }
 
 export interface Card{
