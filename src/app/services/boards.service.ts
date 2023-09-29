@@ -4,7 +4,8 @@ import { environment } from '@environments/environment';
 import { checkToken } from '@interceptors/token.interceptor';
 import { Board } from '@models/board.models';
 import { Colors } from '@models/colors.model';
-import { Card } from '@models/list.model';
+import { Card, List } from '@models/list.model';
+import { BehaviorSubject, tap } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -12,13 +13,17 @@ import { Card } from '@models/list.model';
 export class BoardsService {
   apiUrl = environment.API_URL;
   bufferSpace = 65535;
+  backgroundColor$ = new BehaviorSubject<Colors>('sky');
 
   constructor(private http: HttpClient) {}
 
   getBoard(id: Board['id']) {
-    return this.http.get<any>(`${this.apiUrl}/api/v1/boards/${id}`, {
+    return this.http.get<Board>(`${this.apiUrl}/api/v1/boards/${id}`, {
       context: checkToken(),
-    });
+    })
+    // .pipe(
+    //   tap( (board) => this.setBackgroundColor(board.backgroundColor) )
+    // );
   }
 
   getPosition(cards: Card[], currentIndex: number){
@@ -46,5 +51,18 @@ export class BoardsService {
     return this.http.post<Board>(`${this.apiUrl}/api/v1/boards`, {title, backgroundColor}, {
       context: checkToken(),
     });
+  }
+
+  getPositionNewItem(elements: Card[] | List[]){
+    if (elements.length === 0) {
+      return this.bufferSpace;
+    }
+    const lastIndex = elements.length - 1;
+    const onBottomPosition = elements[lastIndex].position;
+    return onBottomPosition + this.bufferSpace;
+  }
+
+  setBackgroundColor(color: Colors){
+    this.backgroundColor$.next(color);
   }
 }

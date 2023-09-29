@@ -6,18 +6,24 @@ export interface List {
   showCardForm?: boolean;
 }
 
+export interface CreateListDto extends Omit<List, 'id' | 'cards'>{
+  boardId: string;
+}
+
 export interface Card{
   id: string;
   title: string;
   position: number;
   list: List;
-  description: string;
+  description?: string;
 }
 
-export interface UpdateCardDTO{
-  title?: string;
-  description?: string;
-  position?: number;
-  listId?: string | number;
-  boardId?: string
+export interface CreateCardDto extends Omit<Card, 'id' | 'list'>{
+  listId: string;
+  boardId: string;
+}
+
+export interface UpdateCardDto extends Partial<Omit<Card, 'id' | 'list'>> {
+  listId?: number | string;
+  boardId?: string;
 }

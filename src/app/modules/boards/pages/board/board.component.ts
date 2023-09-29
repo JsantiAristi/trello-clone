@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import {
   CdkDragDrop,
   moveItemInArray,
@@ -13,6 +13,9 @@ import { ActivatedRoute } from '@angular/router';
 import { Board } from '@models/board.models';
 import { Card, List } from '@models/list.model';
 import { CardsService } from '@services/cards.service';
+import { FormBuilder, FormControl, Validators } from '@angular/forms';
+import { ListService } from '@services/list.service';
+import { BACKGROUNDS } from '@models/colors.model';
 
 @Component({
   selector: 'app-board',
@@ -28,15 +31,29 @@ import { CardsService } from '@services/cards.service';
     `,
   ],
 })
-export class BoardComponent implements OnInit {
+export class BoardComponent implements OnInit, OnDestroy {
+
   board: Board | null = null;
   id: string = '';
+  showListForm = false;
+  colorBackgrounds = BACKGROUNDS
+
+  inputCard = new FormControl<string>('', {
+    nonNullable: true,
+    validators: Validators.required
+  })
+
+  inputList = new FormControl<string>('', {
+    nonNullable: true,
+    validators: Validators.required
+  })
 
   constructor(
     private dialog: Dialog,
     private boardsService: BoardsService,
     private route: ActivatedRoute,
-    private cardService: CardsService
+    private cardService: CardsService,
+    private listService: ListService
   ) {
     this.route.paramMap.subscribe( params => {
       this.id = params.get('id')!;
@@ -48,10 +65,14 @@ export class BoardComponent implements OnInit {
       this.boardsService.getBoard(this.id).subscribe({
         next: (board) => {
           this.board = board;
-          // this.columns = board.lists;
+          this.boardsService.setBackgroundColor(board.backgroundColor);
         }
       });
     }
+  }
+
+  ngOnDestroy(): void {
+    this.boardsService.setBackgroundColor('sky');
   }
 
   drop(event: CdkDragDrop<Card[]>) {
@@ -76,11 +97,24 @@ export class BoardComponent implements OnInit {
     this.updateCard(card, position, listId);
   }
 
-  addColumn() {
-    // this.columns.push({
-    //   title: 'New Column',
-    //   cards: [],
-    // });
+  addList() {
+    const title = this.inputList.value;
+    if (this.board) {
+      this.listService.createList({
+        title,
+        boardId: this.board.id,
+        position: this.boardsService.getPositionNewItem(this.board.lists)
+      }).subscribe({
+        next: (list) => {
+          this.board?.lists.push({
+            ...list,
+            cards: []
+          });
+          this.showListForm = false;
+          this.inputList.setValue('');
+        }
+      })
+    }
   }
 
   openDialog(card: Card) {
@@ -122,6 +156,36 @@ export class BoardComponent implements OnInit {
         }
       })
     }
+  }
+
+  createCard(list: List){
+    const title = this.inputCard.value;
+    if (this.board) {
+      this.cardService.createCard({
+        title,
+        listId: list.id,
+        boardId: this.board.id,
+        position: this.boardsService.getPositionNewItem(list.cards)
+      }).subscribe({
+        next: (card) => {
+          list.cards.push(card);
+          this.inputCard.setValue('');
+          list.showCardForm = false;
+        }
+      });
+    }
+  }
+
+  closeCardForm(list: List){
+    list.showCardForm = false;
+  }
+
+  get colors(){
+    if (this.board) {
+      const classes = this.colorBackgrounds[this.board.backgroundColor];
+      return classes ? classes : {};
+    }
+    return {};
   }
 }
 
